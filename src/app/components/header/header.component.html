@@ -1,0 +1,26 @@
+<header class="app-header">
+  <div class="header-content">
+    <div class="logo-section">
+      <h1>🏦 Transaction Processor</h1>
+      <span class="version">v1.0.0</span>
+    </div>
+
+    <nav class="navigation">
+      <p-button
+        label="📊 Parser T3000"
+        [routerLink]="['/transaction-parser']"
+        routerLinkActive="active-nav"
+        class="nav-button"
+        [text]="true">
+      </p-button>
+
+      <p-button
+        label="🔍 Comparador"
+        [routerLink]="['/file-matcher']"
+        routerLinkActive="active-nav"
+        class="nav-button"
+        [text]="true">
+      </p-button>
+    </nav>
+  </div>
+</header>

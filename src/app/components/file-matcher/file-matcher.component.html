@@ -1,0 +1,480 @@
+<!-- src/app/file-matcher/file-matcher.component.html -->
+<!-- Versión actualizada para matching por RRN (primeros 11 chars) vs ARN (chars 13-23) -->
+
+<div class="file-matcher-container">
+
+  <!-- Header -->
+  <p-card class="header-card" [ngStyle]="{ color: 'black' }">
+    <p-header [ngStyle]="{ color: 'black' }">
+      🔍 Comparador de Archivos - Tach BO vs Global Processing T3000
+    </p-header>
+    <p [ngStyle]="{ color: 'var(--text-color)' }">
+      Compara archivos Excel de Tach (BackOffice) con T3000 de Global Processing basándose en:
+    </p>
+    <ul>
+      <li><strong>Archivo Tach BO:</strong> Primeros 11 caracteres de la columna RRN</li>
+      <li><strong>Archivo T3000:</strong> Caracteres 13-23 de la columna ARN</li>
+    </ul>
+  </p-card>
+
+  <!-- File Upload Section -->
+  <p-card class="upload-card">
+    <p-header>
+      📁 Seleccionar Archivos
+    </p-header>
+
+    <div class="upload-grid">
+
+      <!-- Tach File Upload -->
+      <div class="upload-section">
+        <h4>📊 Archivo Tach (BackOffice)</h4>
+        <input
+          type="file"
+          (change)="onTachFileChange($event)"
+          accept=".xlsx,.xls"
+          #tachFileInput
+          style="display: none;">
+
+        <div class="upload-area"
+             [class.has-file]="tachFile"
+             (click)="tachFileInput.click()">
+          <i class="pi pi-upload upload-icon"></i>
+          <p>{{ tachFile ? tachFile.name : 'Seleccionar archivo Excel de Tach BO' }}</p>
+          <small>Formato: .xlsx, .xls | <strong>Requiere columna RRN</strong></small>
+        </div>
+
+        <div class="file-info" *ngIf="tachFile">
+          <div class="info-item"><strong>Archivo:</strong> {{ tachFile.name }}</div>
+          <div class="info-item"><strong>Tamaño:</strong> {{ (tachFile.size / 1024).toFixed(2) }} KB</div>
+          <div class="info-item"><strong>Registros:</strong> {{ tachRecords.length }}</div>
+          <div class="info-item"><strong>Campo matching:</strong> Primeros 11 chars de RRN</div>
+        </div>
+      </div>
+
+      <!-- Global Processing File Upload -->
+      <div class="upload-section">
+        <h4>🌐 Archivo Global Processing (T3000)</h4>
+        <input
+          type="file"
+          (change)="onGlobalFileChange($event)"
+          accept=".xlsx,.xls"
+          #globalFileInput
+          style="display: none;">
+
+        <div class="upload-area"
+             [class.has-file]="globalFile"
+             (click)="globalFileInput.click()">
+          <i class="pi pi-upload upload-icon"></i>
+          <p>{{ globalFile ? globalFile.name : 'Seleccionar archivo Excel de T3000' }}</p>
+          <small>Formato: .xlsx, .xls | <strong>Requiere columna ARN</strong></small>
+        </div>
+
+        <div class="file-info" *ngIf="globalFile">
+          <div class="info-item"><strong>Archivo:</strong> {{ globalFile.name }}</div>
+          <div class="info-item"><strong>Tamaño:</strong> {{ (globalFile.size / 1024).toFixed(2) }} KB</div>
+          <div class="info-item"><strong>Registros:</strong> {{ globalRecords.length }}</div>
+          <div class="info-item"><strong>Campo matching:</strong> Chars 13-23 de ARN</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <p-button
+        label="🔄 Procesar y Comparar por RRN vs ARN"
+        icon="pi pi-cog"
+        [disabled]="!tachFile || !globalFile || isLoading"
+        (onClick)="processFiles()">
+      </p-button>
+
+      <p-button
+        label="🗑️ Limpiar"
+        icon="pi pi-trash"
+        severity="secondary"
+        (onClick)="reset()">
+      </p-button>
+    </div>
+  </p-card>
+
+  <!-- Loading Indicator -->
+  <p-card *ngIf="isLoading" class="loading-card">
+    <div class="loading-content">
+      <p-progressSpinner></p-progressSpinner>
+      <p>Procesando archivos y buscando coincidencias por RRN vs ARN...</p>
+    </div>
+  </p-card>
+
+  <!-- Results Section -->
+  <div *ngIf="showResults">
+
+    <!-- Summary Card -->
+    <p-card class="summary-card">
+      <p-header>
+        📊 Resumen de Coincidencias por RRN vs ARN
+      </p-header>
+
+      <div class="summary-grid">
+        <div class="summary-item info">
+          <div class="summary-icon">📋</div>
+          <div class="summary-content">
+            <div class="summary-label">Registros Tach BO</div>
+            <div class="summary-value">{{ summary.totalTachRecords }}</div>
+          </div>
+        </div>
+
+        <div class="summary-item info">
+          <div class="summary-icon">🌐</div>
+          <div class="summary-content">
+            <div class="summary-label">Registros T3000</div>
+            <div class="summary-value">{{ summary.totalGlobalRecords }}</div>
+          </div>
+        </div>
+
+        <div class="summary-item success">
+          <div class="summary-icon">✅</div>
+          <div class="summary-content">
+            <div class="summary-label">Coincidencias</div>
+            <div class="summary-value">{{ summary.totalMatches }}</div>
+          </div>
+        </div>
+
+        <div class="summary-item warning">
+          <div class="summary-icon">⚠️</div>
+          <div class="summary-content">
+            <div class="summary-label">Sin Coincidencia</div>
+            <div class="summary-value">{{ getTotalUnmatched() }}</div>
+          </div>
+        </div>
+
+        <div class="summary-item info">
+          <div class="summary-icon">📈</div>
+          <div class="summary-content">
+            <div class="summary-label">% Coincidencia</div>
+            <div class="summary-value">{{ summary.matchPercentage.toFixed(2) }}%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-actions">
+        <p-button
+          label="📋 Ver Detalle"
+          icon="pi pi-eye"
+          severity="info"
+          (onClick)="showSummaryDialog = true">
+        </p-button>
+
+        <p-button
+          label="📤 Exportar Excel"
+          icon="pi pi-file-excel"
+          severity="success"
+          (onClick)="exportToExcel()">
+        </p-button>
+      </div>
+    </p-card>
+
+    <!-- Filters -->
+    <p-card class="filter-card">
+      <p-header>
+        🔍 Filtros
+      </p-header>
+
+      <div class="filter-content">
+        <div class="filter-item">
+          <label for="matchStatus">Estado de Coincidencia:</label>
+          <p-dropdown
+            id="matchStatus"
+            [options]="matchStatusOptions"
+            [(ngModel)]="selectedMatchStatus"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Seleccionar estado">
+          </p-dropdown>
+        </div>
+
+        <div class="filter-stats">
+          <p-tag
+            value="Total: {{ getFilteredRecordsCount() }}"
+            severity="info">
+          </p-tag>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Results Table -->
+    <p-card class="table-card">
+      <p-header>
+        📋 Resultados de Comparación por RRN vs ARN
+      </p-header>
+
+      <p-table
+        [value]="getFilteredRecords()"
+        [paginator]="true"
+        [rows]="rows"
+        [totalRecords]="getFilteredRecordsCount()"
+        [rowsPerPageOptions]="[25, 50, 100]"
+        [loading]="isLoading"
+        styleClass="p-datatable-gridlines">
+
+        <!-- Table Header -->
+        <ng-template pTemplate="caption">
+          <div class="table-header">
+            <span class="table-title">Resultados ({{ getFilteredRecordsCount() }} registros)</span>
+            <span class="p-input-icon-left">
+              <i class="pi pi-search"></i>
+              <input
+                pInputText
+                type="text"
+                placeholder="Buscar..." />
+            </span>
+          </div>
+        </ng-template>
+
+        <!-- Table Columns -->
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="matchingKey">
+              Matching Key
+              <p-sortIcon field="matchingKey"></p-sortIcon>
+            </th>
+            <th pSortableColumn="matchStatus">
+              Estado
+              <p-sortIcon field="matchStatus"></p-sortIcon>
+            </th>
+            <th pSortableColumn="comercio">
+              Comercio
+              <p-sortIcon field="comercio"></p-sortIcon>
+            </th>
+            <th pSortableColumn="importe">
+              Importe
+              <p-sortIcon field="importe"></p-sortIcon>
+            </th>
+            <th pSortableColumn="fecha">
+              Fecha
+              <p-sortIcon field="fecha"></p-sortIcon>
+            </th>
+            <th pSortableColumn="terminal">
+              Terminal
+              <p-sortIcon field="terminal"></p-sortIcon>
+            </th>
+            <th pSortableColumn="tarjeta">
+              Tarjeta
+              <p-sortIcon field="tarjeta"></p-sortIcon>
+            </th>
+            <th pSortableColumn="tipo">
+              Tipo
+              <p-sortIcon field="tipo"></p-sortIcon>
+            </th>
+            <th>Descripción</th>
+            <th>RRN/ARN Completos</th>
+            <th>Origen</th>
+          </tr>
+        </ng-template>
+
+        <!-- Table Body -->
+        <ng-template pTemplate="body" let-record>
+          <tr>
+            <td class="rnn-cell">{{ record.matchingKey }}</td>
+            <td>
+              <p-tag
+                [value]="getMatchStatusLabel(record.matchStatus)"
+                [severity]="getMatchStatusSeverity(record.matchStatus)">
+              </p-tag>
+            </td>
+            <td>{{ record.comercio || '-' }}</td>
+            <td class="amount-cell">{{ formatAmount(record.importe) }}</td>
+            <td>{{ record.fecha || '-' }}</td>
+            <td>{{ record.terminal || '-' }}</td>
+            <td class="card-cell">{{ record.tarjeta || '-' }}</td>
+            <td>{{ record.tipo || '-' }}</td>
+            <td class="description-cell"
+                [pTooltip]="record.descripcion"
+                tooltipPosition="top">
+              {{ record.descripcion || '-' }}
+            </td>
+            <td class="rrn-arn-cell">
+              <div *ngIf="record.rrn" class="rrn-info">
+                <small>RRN Completo:</small><br>{{ record.rrn }}
+              </div>
+              <div *ngIf="record.arn" class="arn-info">
+                <small>ARN Completo:</small><br>{{ record.arn }}
+              </div>
+              <div *ngIf="!record.rrn && !record.arn" class="no-data">
+                -
+              </div>
+            </td>
+            <td>
+              <div class="origin-badges">
+                <p-tag
+                  *ngIf="record.tachRecord"
+                  value="Tach BO"
+                  severity="info">
+                </p-tag>
+                <p-tag
+                  *ngIf="record.globalRecord"
+                  value="T3000"
+                  severity="warning">
+                </p-tag>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <!-- Empty State -->
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="11" class="empty-state">
+              <i class="pi pi-info-circle"></i>
+              <p>No se encontraron registros con los filtros aplicados</p>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+
+    <!-- Unmatched Records Details -->
+    <p-card *ngIf="getTotalUnmatched() > 0" class="unmatched-card">
+      <p-header>
+        ⚠️ Registros sin Coincidencia por RRN vs ARN
+      </p-header>
+
+      <!-- Tach Unmatched -->
+      <div class="unmatched-section" *ngIf="summary.totalUnmatchedTach > 0">
+        <h4>📊 Registros de Tach BO sin coincidencia ({{ summary.totalUnmatchedTach }})</h4>
+
+        <p-table
+          [value]="getUnmatchedTachRecords()"
+          [paginator]="true"
+          [rows]="10"
+          styleClass="p-datatable-sm">
+
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Matching Key (RRN 11)</th>
+              <th>RRN Completo</th>
+              <th>Comercio</th>
+              <th>Importe</th>
+              <th>Fecha</th>
+              <th>Marca</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-record>
+            <tr>
+              <td class="rnn-cell">{{ record.matchingKey }}</td>
+              <td class="rrn-arn-cell">{{ record.rrn }}</td>
+              <td>{{ record.tachRecord?.comercio || '-' }}</td>
+              <td class="amount-cell">{{ formatAmount(record.tachRecord?.importe) }}</td>
+              <td>{{ record.tachRecord?.fecha || '-' }}</td>
+              <td>{{ record.tachRecord?.marcaTarjeta || '-' }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <!-- Global Unmatched -->
+      <div class="unmatched-section" *ngIf="summary.totalUnmatchedGlobal > 0">
+        <h4>🌐 Registros de T3000 sin coincidencia ({{ summary.totalUnmatchedGlobal }})</h4>
+
+        <p-table
+          [value]="getUnmatchedGlobalRecords()"
+          [paginator]="true"
+          [rows]="10"
+          styleClass="p-datatable-sm">
+
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Matching Key (ARN 13-23)</th>
+              <th>ARN Completo</th>
+              <th>Comercio</th>
+              <th>Importe</th>
+              <th>Fecha</th>
+              <th>Tarjeta</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-record>
+            <tr>
+              <td class="rnn-cell">{{ record.matchingKey }}</td>
+              <td class="rrn-arn-cell">{{ record.arn }}</td>
+              <td>{{ record.globalRecord?.numeroComercio || '-' }}</td>
+              <td class="amount-cell">{{ formatAmount(record.globalRecord?.importeTransaccion) }}</td>
+              <td>{{ record.globalRecord?.fechaOperacion || '-' }}</td>
+              <td>{{ record.globalRecord?.numeroTarjeta || '-' }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </p-card>
+  </div>
+</div>
+
+<!-- Summary Dialog -->
+<p-dialog
+  header="📊 Resumen Detallado de Coincidencias por RRN vs ARN"
+  [(visible)]="showSummaryDialog"
+  [modal]="true"
+  [resizable]="false"
+  [style]="{width: '90vw', maxWidth: '800px'}">
+
+  <div class="dialog-content">
+    <h4>📈 Estadísticas Generales</h4>
+    <div class="stats-grid">
+      <div class="stat-item info">
+        <strong>Total Registros Tach BO:</strong> {{ summary.totalTachRecords }}
+      </div>
+      <div class="stat-item info">
+        <strong>Total Registros T3000:</strong> {{ summary.totalGlobalRecords }}
+      </div>
+      <div class="stat-item success">
+        <strong>Coincidencias por RRN vs ARN:</strong> {{ summary.totalMatches }}
+      </div>
+      <div class="stat-item warning">
+        <strong>Tach BO sin Coincidencia:</strong> {{ summary.totalUnmatchedTach }}
+      </div>
+      <div class="stat-item warning">
+        <strong>T3000 sin Coincidencia:</strong> {{ summary.totalUnmatchedGlobal }}
+      </div>
+      <div class="stat-item success">
+        <strong>Porcentaje de Coincidencia:</strong> {{ summary.matchPercentage.toFixed(2) }}%
+      </div>
+    </div>
+
+    <h4>🔍 Criterio de Matching</h4>
+    <div class="matching-info">
+      <p><strong>Archivo Tach BO:</strong> Se extraen los primeros 11 caracteres de la columna RRN</p>
+      <p><strong>Archivo T3000:</strong> Se extraen los caracteres 13-23 de la columna ARN</p>
+      <p><strong>Tipo de Comparación:</strong> Coincidencia exacta entre ambos campos extraídos</p>
+      <p><strong>Archivos Procesados:</strong> {{ tachFile?.name }} vs {{ globalFile?.name }}</p>
+    </div>
+
+    <h4>🔄 Proceso de Matching</h4>
+    <ul class="process-list">
+      <li>✅ Se procesaron {{ summary.totalTachRecords }} registros de Tach BO con RRN válido</li>
+      <li>✅ Se procesaron {{ summary.totalGlobalRecords }} registros de T3000 con ARN válido</li>
+      <li>✅ Se extrajo matching key de RRN (primeros 11 chars) y ARN (chars 13-23)</li>
+      <li>✅ Se realizó comparación por coincidencia exacta de matching keys</li>
+      <li>✅ Se encontraron {{ summary.totalMatches }} coincidencias exactas</li>
+      <li *ngIf="summary.totalUnmatchedTach > 0">⚠️ {{ summary.totalUnmatchedTach }} registros de Tach BO sin coincidencia</li>
+      <li *ngIf="summary.totalUnmatchedGlobal > 0">⚠️ {{ summary.totalUnmatchedGlobal }} registros de T3000 sin coincidencia</li>
+    </ul>
+  </div>
+
+  <p-footer>
+    <p-button
+      label="Cerrar"
+      icon="pi pi-times"
+      severity="secondary"
+      (onClick)="showSummaryDialog=false">
+    </p-button>
+
+    <p-button
+      label="Exportar Excel"
+      icon="pi pi-file-excel"
+      severity="success"
+      (onClick)="exportToExcel(); showSummaryDialog=false">
+    </p-button>
+  </p-footer>
+</p-dialog>
+
+<!-- Toast Messages -->
+

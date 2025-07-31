@@ -1,0 +1,609 @@
+<!-- src/app/transaction-parser/transaction-parser.component.html -->
+<!-- HTML Completo compatible con el TypeScript de Angular -->
+
+<div class="transaction-parser-container">
+  <!-- Header Card -->
+  <p-card header="🏦 Deserializador de Transacciones T3000" class="upload-card">
+    <p>
+      Selecciona un archivo de transacciones T3000 para procesar y analizar los
+      datos
+    </p>
+  </p-card>
+
+  <!-- Upload Section -->
+  <p-card header="📁 Cargar Archivo" class="upload-card">
+    <!-- File Input -->
+    <div class="upload-section">
+      <input
+        type="file"
+        (change)="onFileChange($event)"
+        accept=".txt,.dat"
+        #fileInput
+        style="display: none"
+      />
+
+      <div class="upload-area" (click)="fileInput.click()">
+        <i class="pi pi-cloud-upload upload-icon"></i>
+        <p>Haz clic para seleccionar un archivo T3000</p>
+        <small>Formatos soportados: .txt, .dat</small>
+      </div>
+    </div>
+
+    <!-- File Info -->
+    <div class="file-info" *ngIf="selectedFile">
+      <div class="info-grid">
+        <div class="info-item">
+          <strong>Archivo:</strong> {{ selectedFile.name }}
+        </div>
+        <div class="info-item">
+          <strong>Tamaño:</strong>
+          {{ (selectedFile.size / 1024).toFixed(2) }} KB
+        </div>
+        <div class="info-item">
+          <strong>Tipo:</strong> {{ selectedFile.type || "text/plain" }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons" *ngIf="selectedFile">
+      <p-button
+        label="Procesar Archivo"
+        icon="pi pi-cog"
+        [loading]="isLoading"
+        (onClick)="parseFile()"
+        class="p-button-success"
+      >
+      </p-button>
+
+      <p-button
+        label="Limpiar"
+        icon="pi pi-trash"
+        (onClick)="reset()"
+        class="p-button-secondary"
+      >
+      </p-button>
+    </div>
+  </p-card>
+
+  <!-- Results Section -->
+  <div *ngIf="parsedData">
+    <!-- Summary Card -->
+    <p-card header="📊 Resumen del Archivo" class="summary-card">
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-icon">📋</div>
+          <div class="summary-content">
+            <div class="summary-label">Headers</div>
+            <div class="summary-value">
+              {{ parsedData.summary.totalHeaders }}
+            </div>
+          </div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-icon">💳</div>
+          <div class="summary-content">
+            <div class="summary-label">Transacciones</div>
+            <div class="summary-value">
+              {{ parsedData.summary.totalDetails }}
+            </div>
+          </div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-icon">📄</div>
+          <div class="summary-content">
+            <div class="summary-label">Trailers</div>
+            <div class="summary-value">
+              {{ parsedData.summary.totalTrailers }}
+            </div>
+          </div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-icon">💰</div>
+          <div class="summary-content">
+            <div class="summary-label">Importe Total</div>
+            <div class="summary-value">
+              {{ formatAmount(parsedData.summary.totalImporte) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Distribution Chart -->
+      <div
+        class="distribution-section"
+        *ngIf="parsedData.summary.transaccionesPorTipo"
+      >
+        <h4>Distribución por Tipo de Producto</h4>
+        <div class="type-distribution">
+          <div
+            class="type-item"
+            *ngFor="
+              let item of parsedData.summary.transaccionesPorTipo | keyvalue
+            "
+          >
+            <span class="type-name">{{ item.key }}</span>
+            <p-tag
+              [value]="item.value.toString()"
+              [severity]="getProductTypeSeverity(item.key)"
+            >
+            </p-tag>
+          </div>
+        </div>
+      </div>
+
+      <!-- Distribución por Marca de Tarjeta -->
+      <div
+        class="distribution-section"
+        *ngIf="parsedData.summary.transaccionesPorMarcaTarjeta"
+      >
+        <h4>Distribución por Marca de Tarjeta</h4>
+        <div class="brand-distribution">
+          <div
+            class="brand-item"
+            *ngFor="
+              let item of parsedData.summary.transaccionesPorMarcaTarjeta
+                | keyvalue
+            "
+          >
+            <span class="brand-name">{{ item.key }}</span>
+            <p-tag
+              [value]="item.value.toString()"
+              [severity]="getCardBrandSeverity(item.key)"
+              [style]="{
+                'background-color': getCardBrandColor(item.key),
+                color: 'white'
+              }"
+            >
+            </p-tag>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="summary-actions">
+        <p-button
+          label="Ver Detalles"
+          icon="pi pi-eye"
+          (onClick)="showSummary()"
+          class="p-button-info"
+        >
+        </p-button>
+      </div>
+    </p-card>
+
+    <!-- Export Section - ACTUALIZADA -->
+    <p-card header="📤 Exportar Datos" class="export-card">
+      <div class="export-buttons">
+        <!-- NUEVO: Botón principal para Excel -->
+        <p-button
+          label="📊 Excel Completo"
+          icon="pi pi-file-excel"
+          (onClick)="exportToExcel()"
+          class="p-button-success p-button-lg"
+        >
+        </p-button>
+
+        <p-button
+          label="📄 JSON Completo"
+          icon="pi pi-file"
+          (onClick)="exportToJson()"
+          class="p-button-info"
+        >
+        </p-button>
+
+        <p-button
+          label="📋 CSV Transacciones"
+          icon="pi pi-file-excel"
+          (onClick)="exportToCsv()"
+          class="p-button-secondary"
+        >
+        </p-button>
+
+        <p-button
+          label="📑 CSV Headers"
+          icon="pi pi-file-excel"
+          (onClick)="exportHeadersToCsv()"
+          class="p-button-warning"
+        >
+        </p-button>
+      </div>
+
+      <!-- Información sobre los formatos -->
+      <div
+        class="export-info"
+        style="
+          margin-top: 1rem;
+          padding: 1rem;
+          background: #f8f9fa;
+          border-radius: 6px;
+        "
+      >
+        <h5 style="margin: 0 0 0.5rem 0; color: #333">Tipos de Exportación:</h5>
+        <ul
+          style="
+            margin: 0;
+            padding-left: 1.5rem;
+            font-size: 0.9rem;
+            color: #666;
+          "
+        >
+          <li>
+            <strong>📊 Excel Completo:</strong> Archivo .xlsx con múltiples
+            hojas organizadas (Recomendado)
+          </li>
+          <li>
+            <strong>📄 JSON:</strong> Datos completos para procesamiento
+            programático
+          </li>
+          <li>
+            <strong>📋 CSV:</strong> Compatible con Excel (separado por punto y
+            coma)
+          </li>
+        </ul>
+      </div>
+    </p-card>
+
+    <!-- Data Table -->
+    <p-card header="💳 Transacciones" class="table-card">
+      <p-table
+        [value]="details"
+        [paginator]="true"
+        [rows]="rows"
+        [first]="first"
+        [totalRecords]="details.length"
+        [rowsPerPageOptions]="[10, 25, 50, 100]"
+        [loading]="isLoading"
+        [globalFilterFields]="[
+          'numeroComercio',
+          'numeroTarjeta',
+          'descripcionMovimiento',
+          'marcaTarjeta'
+        ]"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-gridlines"
+        #dt
+      >
+        <!-- Table Header -->
+        <ng-template pTemplate="caption">
+          <div class="table-header">
+            <span class="table-title"
+              >Lista de Transacciones ({{ details.length }} registros)</span
+            >
+            <span class="p-input-icon-left">
+              <i class="pi pi-search"></i>
+              <input
+                pInputText
+                type="text"
+                (input)="applyFilterGlobal($event, dt)"
+                placeholder="Buscar transacciones..."
+              />
+            </span>
+          </div>
+        </ng-template>
+
+        <!-- Table Columns -->
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="numeroComercio">
+              Comercio
+              <p-sortIcon field="numeroComercio"></p-sortIcon>
+            </th>
+            <th pSortableColumn="fechaOperacion">
+              Fecha
+              <p-sortIcon field="fechaOperacion"></p-sortIcon>
+            </th>
+            <th pSortableColumn="importeTransaccion">
+              Importe
+              <p-sortIcon field="importeTransaccion"></p-sortIcon>
+            </th>
+            <th>Tarjeta</th>
+            <th pSortableColumn="marcaTarjeta">
+              Marca
+              <p-sortIcon field="marcaTarjeta"></p-sortIcon>
+            </th>
+            <th pSortableColumn="tipoProducto">
+              Tipo
+              <p-sortIcon field="tipoProducto"></p-sortIcon>
+            </th>
+            <th>Descripción</th>
+            <th pSortableColumn="cuotas">
+              Cuotas
+              <p-sortIcon field="cuotas"></p-sortIcon>
+            </th>
+            <th>Autorización</th>
+            <th>Terminal</th>
+            <th>ARN</th>
+            <th>RRN</th>
+          </tr>
+        </ng-template>
+
+        <!-- Table Body -->
+        <ng-template pTemplate="body" let-transaction>
+          <tr>
+            <td>{{ transaction.numeroComercio }}</td>
+            <td>{{ transaction.fechaOperacion }}</td>
+            <td class="amount-cell">
+              {{ formatAmount(transaction.importeTransaccion) }}
+            </td>
+            <td class="card-cell">{{ transaction.numeroTarjeta }}</td>
+            <td>
+              <p-tag
+                [value]="transaction.marcaTarjeta"
+                [severity]="getCardBrandSeverity(transaction.marcaTarjeta)"
+                [style]="{
+                  'background-color': getCardBrandColor(
+                    transaction.marcaTarjeta
+                  ),
+                  color: 'white'
+                }"
+              >
+              </p-tag>
+            </td>
+            <td>
+              <p-tag
+                [value]="transaction.tipoProducto"
+                [severity]="getProductTypeSeverity(transaction.tipoProducto)"
+              >
+              </p-tag>
+            </td>
+            <td
+              class="description-cell"
+              [pTooltip]="transaction.descripcionMovimiento"
+              tooltipPosition="top"
+            >
+              {{ transaction.descripcionMovimiento }}
+            </td>
+            <td class="center-cell">{{ transaction.cuotas }}</td>
+            <td>{{ transaction.codigoAutorizacion }}</td>
+            <td>{{ transaction.numeroTerminal }}</td>
+            <td class="arn-cell">{{ transaction.arn || "-" }}</td>
+            <td class="rrn-cell">{{ transaction.rrn || "-" }}</td>
+          </tr>
+        </ng-template>
+
+        <!-- Empty State -->
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="12" class="empty-state">
+              <i class="pi pi-info-circle"></i>
+              <p>No se encontraron transacciones</p>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+
+    <!-- Headers Table -->
+    <p-card
+      header="📋 Headers del Archivo"
+      class="table-card"
+      *ngIf="parsedData.headers.length > 0"
+    >
+      <p-table
+        [value]="parsedData.headers"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-gridlines"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>ID</th>
+            <th>Entidad</th>
+            <th>Marca</th>
+            <th>Subadquirente</th>
+            <th>Fecha Proceso</th>
+            <th>Hora Proceso</th>
+            <th>Archivo</th>
+            <th>Descripción</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-header let-i="rowIndex">
+          <tr>
+            <td>{{ i + 1 }}</td>
+            <td>{{ header.entidad }}</td>
+            <td>
+              <p-tag [value]="header.marca" severity="info"></p-tag>
+            </td>
+            <td>{{ header.codigoSubadquirente }}</td>
+            <td>{{ header.fechaProceso }}</td>
+            <td>{{ header.horaProceso }}</td>
+            <td>{{ header.archivo }}</td>
+            <td>{{ header.descripcionArchivo }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+
+    <!-- Trailers Table -->
+    <p-card
+      header="📄 Trailers del Archivo"
+      class="table-card"
+      *ngIf="parsedData.trailers.length > 0"
+    >
+      <p-table
+        [value]="parsedData.trailers"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-gridlines"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>ID</th>
+            <th>Entidad</th>
+            <th>Subadquirente</th>
+            <th>Cantidad Registros</th>
+            <th>Registros Encontrados</th>
+            <th>Estado</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-trailer let-i="rowIndex">
+          <tr>
+            <td>{{ i + 1 }}</td>
+            <td>{{ trailer.entidad }}</td>
+            <td>{{ trailer.codigoSubadquirente }}</td>
+            <td class="center-cell">{{ trailer.cantidadRegistros }}</td>
+            <td class="center-cell">{{ parsedData.details.length }}</td>
+            <td>
+              <p-tag
+                [value]="
+                  trailer.cantidadRegistros === parsedData.details.length
+                    ? 'Válido'
+                    : 'Inconsistente'
+                "
+                [severity]="
+                  trailer.cantidadRegistros === parsedData.details.length
+                    ? 'success'
+                    : 'danger'
+                "
+              >
+              </p-tag>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+</div>
+
+<!-- Summary Dialog -->
+<p-dialog
+  header="📊 Resumen Detallado"
+  [(visible)]="showSummaryDialog"
+  [style]="{ width: '70vw', maxWidth: '900px' }"
+  [modal]="true"
+  [resizable]="false"
+  [draggable]="false"
+>
+  <div *ngIf="parsedData">
+    <div class="dialog-content">
+      <h4>📋 Información General</h4>
+      <div class="info-summary">
+        <div class="info-row">
+          <span><strong>Total Headers:</strong></span>
+          <span>{{ parsedData.summary.totalHeaders }}</span>
+        </div>
+        <div class="info-row">
+          <span><strong>Total Transacciones:</strong></span>
+          <span>{{ parsedData.summary.totalDetails }}</span>
+        </div>
+        <div class="info-row">
+          <span><strong>Total Trailers:</strong></span>
+          <span>{{ parsedData.summary.totalTrailers }}</span>
+        </div>
+        <div class="info-row">
+          <span><strong>Importe Total:</strong></span>
+          <span>{{ formatAmount(parsedData.summary.totalImporte) }}</span>
+        </div>
+      </div>
+
+      <h4>💳 Distribución por Tipo de Producto</h4>
+      <div class="type-stats">
+        <div
+          class="stat-item"
+          *ngFor="
+            let item of parsedData.summary.transaccionesPorTipo | keyvalue
+          "
+        >
+          <span>{{ item.key }}:</span>
+          <p-tag
+            [value]="item.value.toString()"
+            [severity]="getProductTypeSeverity(item.key)"
+          ></p-tag>
+        </div>
+      </div>
+
+      <h4>🏷️ Distribución por Marca de Tarjeta</h4>
+      <div class="brand-stats">
+        <div
+          class="stat-item"
+          *ngFor="
+            let item of parsedData.summary.transaccionesPorMarcaTarjeta
+              | keyvalue
+          "
+        >
+          <span>{{ item.key }}:</span>
+          <p-tag
+            [value]="item.value.toString()"
+            [severity]="getCardBrandSeverity(item.key)"
+            [style]="{
+              'background-color': getCardBrandColor(item.key),
+              color: 'white'
+            }"
+          >
+          </p-tag>
+        </div>
+      </div>
+
+      <h4>🏢 Distribución por Marca Procesadora</h4>
+      <div class="processor-stats">
+        <div
+          class="stat-item"
+          *ngFor="
+            let item of parsedData.summary.transaccionesPorMarca | keyvalue
+          "
+        >
+          <span>{{ item.key }}:</span>
+          <p-tag [value]="item.value.toString()" severity="info"></p-tag>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="📊 Exportar Excel"
+      icon="pi pi-file-excel"
+      (onClick)="exportToExcel(); showSummaryDialog = false"
+      class="p-button-success"
+    >
+    </p-button>
+
+    <p-button
+      label="Cerrar"
+      icon="pi pi-times"
+      (onClick)="showSummaryDialog = false"
+      class="p-button-secondary"
+    >
+    </p-button>
+  </ng-template>
+</p-dialog>
+
+<!-- Validation Errors Dialog -->
+<p-dialog
+  header="⚠️ Advertencias de Validación"
+  [(visible)]="showValidationDialog"
+  [style]="{ width: '50vw', maxWidth: '600px' }"
+  [modal]="true"
+  [resizable]="false"
+>
+  <div class="validation-content">
+    <p>Se encontraron las siguientes inconsistencias en el archivo:</p>
+    <ul class="validation-list">
+      <li *ngFor="let error of validationErrors" class="validation-error">
+        <i class="pi pi-exclamation-triangle"></i>
+        {{ error }}
+      </li>
+    </ul>
+    <p>
+      <small
+        ><strong>Nota:</strong> Estas inconsistencias no impiden el
+        procesamiento, pero pueden indicar problemas en el archivo
+        origen.</small
+      >
+    </p>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Entendido"
+      icon="pi pi-check"
+      (onClick)="showValidationDialog = false"
+      class="p-button-warning"
+    >
+    </p-button>
+  </ng-template>
+</p-dialog>
+
+<!-- Toast Messages -->
+<p-toast></p-toast>

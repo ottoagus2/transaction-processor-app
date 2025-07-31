@@ -1,0 +1,41 @@
+/* src/styles.css */
+
+/* Importar estilos de PrimeNG si no están en angular.json */
+@import 'primeng/resources/themes/lara-light-blue/theme.css';
+@import 'primeng/resources/primeng.css';
+@import 'primeicons/primeicons.css';
+
+/* Estilos globales para asegurar que PrimeNG funcione */
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Asegurar que los iconos de PrimeNG se muestren */
+.pi {
+  font-family: 'primeicons' !important;
+}
+
+/* Estilos específicos para el componente */
+.app-container {
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.main-content {
+  padding: 1rem;
+}
+
+.app-footer {
+  background: #343a40;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  margin-top: auto;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}

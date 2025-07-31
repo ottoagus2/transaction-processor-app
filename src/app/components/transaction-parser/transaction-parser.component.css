@@ -1,0 +1,384 @@
+/* src/app/transaction-parser/transaction-parser.component.css */
+
+.transaction-parser-container {
+  padding: 1rem;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Header Card Styles */
+.header-card {
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.header-card ::ng-deep .p-card-header {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.header-card ::ng-deep .p-card-body {
+  background: transparent;
+  color: white;
+}
+
+/* Upload Card Styles */
+.upload-card {
+  margin-bottom: 1.5rem;
+}
+
+.upload-section {
+  margin-bottom: 1rem;
+}
+
+.upload-area {
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fafafa;
+}
+
+.upload-area:hover {
+  border-color: #007ad9;
+  background: #f0f8ff;
+}
+
+.upload-icon {
+  font-size: 3rem;
+  color: #007ad9;
+  margin-bottom: 1rem;
+}
+
+.upload-area p {
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.upload-area small {
+  color: #666;
+}
+
+/* File Info Styles */
+.file-info {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-item strong {
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+/* Summary Card Styles */
+.summary-card {
+  margin-bottom: 1.5rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #007ad9;
+}
+
+.summary-icon {
+  font-size: 2rem;
+}
+
+.summary-content {
+  flex-grow: 1;
+}
+
+.summary-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Distribution Sections */
+.distribution-section {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.distribution-section h4 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.type-distribution,
+.brand-distribution {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.type-item,
+.brand-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 4px;
+  min-width: 120px;
+}
+
+.type-name,
+.brand-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.summary-actions {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+/* Export Card Styles */
+.export-card {
+  margin-bottom: 1.5rem;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Table Card Styles */
+.table-card {
+  margin-bottom: 1.5rem;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.table-title {
+  font-weight: bold;
+  color: #333;
+}
+
+/* Table Cell Styles */
+.amount-cell {
+  text-align: right;
+  font-weight: bold;
+  color: #28a745;
+}
+
+.card-cell {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  background: #f1f3f4;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+}
+
+.description-cell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.center-cell {
+  text-align: center;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.empty-state i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* Dialog Styles */
+.dialog-content {
+  padding: 1rem 0;
+}
+
+.dialog-content h4 {
+  color: #333;
+  margin: 1.5rem 0 1rem 0;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 0.5rem;
+}
+
+.dialog-content ul {
+  list-style: none;
+  padding: 0;
+}
+
+.dialog-content li {
+  padding: 0.5rem;
+  background: #f8f9fa;
+  margin: 0.5rem 0;
+  border-radius: 4px;
+  border-left: 3px solid #007ad9;
+}
+
+.type-stats,
+.brand-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #eee;
+}
+
+.validation-content {
+  padding: 1rem 0;
+}
+
+.validation-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+}
+
+.validation-content li {
+  margin: 0.5rem 0;
+  color: #d32f2f;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .transaction-parser-container {
+    padding: 0.5rem;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons,
+  .export-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .table-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .type-distribution,
+  .brand-distribution {
+    flex-direction: column;
+  }
+
+  .type-stats,
+  .brand-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Custom PrimeNG Overrides */
+::ng-deep .p-card {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 8px;
+}
+
+::ng-deep .p-card-header {
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  font-weight: bold;
+  color: #333;
+}
+
+::ng-deep .p-datatable .p-datatable-header {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+}
+
+::ng-deep .p-datatable .p-datatable-thead > tr > th {
+  background: #f8f9fa;
+  color: #333;
+  font-weight: bold;
+  border: 1px solid #dee2e6;
+}
+
+::ng-deep .p-datatable .p-datatable-tbody > tr:nth-child(even) {
+  background: #f8f9fa;
+}
+
+::ng-deep .p-datatable .p-datatable-tbody > tr:hover {
+  background: #e3f2fd;
+}
+
+::ng-deep .p-tag {
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+::ng-deep .p-button {
+  border-radius: 6px;
+  font-weight: 500;
+}
